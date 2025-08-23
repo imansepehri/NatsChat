@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+  nats:
+    image: nats:2.10-alpine
+    command: ["-js", "-m", "8222", "-p", "4222", "--ws", "--ws_port", "8080"]
+    ports:
+      - "4222:4222"   # NATS client
+      - "5080:8080"   # NATS WebSocket
+      - "8222:8222"   # NATS monitoring
+    restart: unless-stopped
+
+  chat-history:
+    build:
+      context: .
+      dockerfile: backend/ChatHistoryService/Dockerfile
+    environment:
+      - ASPNETCORE_URLS=http://0.0.0.0:5001
+      - ConnectionStrings__Default=Data Source=/data/chat.db
+      - Nats__Url=nats://nats:4222
+    depends_on:
+      - nats
+    ports:
+      - "5001:5001"
+    volumes:
+      - chat_db:/data
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      - NEXT_PUBLIC_NATS_WS_URL=ws://localhost:5080
+      - GRPC_CHAT_HISTORY_URL=chat-history:5001
+    depends_on:
+      - nats
+      - chat-history
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+volumes:
+  chat_db:
+    driver: local
+
+

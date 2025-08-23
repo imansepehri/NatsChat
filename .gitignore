@@ -1,0 +1,58 @@
+# Dependencies
+node_modules/
+*.dll
+*.exe
+*.pdb
+
+# Build outputs
+bin/
+obj/
+dist/
+.next/
+out/
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# NATS data
+data/
+jetstream/
+
+# Tools (don't commit large binaries)
+tools/nats-server-*.exe
+tools/*.zip

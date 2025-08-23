@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package chat;
+
+message ChatMessage {
+  string id = 1;
+  string roomId = 2;
+  string user = 3;
+  string content = 4;
+  int64 timestamp = 5; // unix ms
+}
+
+message GetRecentMessagesRequest {
+  string roomId = 1;
+  int32 limit = 2;
+}
+
+message GetRecentMessagesResponse {
+  repeated ChatMessage messages = 1;
+}
+
+service ChatHistoryService {
+  rpc GetRecentMessages(GetRecentMessagesRequest) returns (GetRecentMessagesResponse);
+}
+
+

@@ -1,0 +1,13 @@
+@echo off
+echo Starting NATS v2.10 with WebSocket support...
+echo.
+echo Downloading NATS v2.10...
+powershell -NoProfile -ExecutionPolicy Bypass -Command "try { Invoke-WebRequest -Uri 'https://github.com/nats-io/nats-server/releases/download/v2.10.0/nats-server-v2.10.0-windows-amd64.zip' -OutFile 'tools\nats-server-v2.10.0-windows-amd64.zip' -UseBasicParsing } catch { exit 1 }"
+
+echo Extracting...
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Expand-Archive -Force -Path 'tools\nats-server-v2.10.0-windows-amd64.zip' -DestinationPath 'tools'"
+
+echo Starting NATS with WebSocket on port 5080...
+cd tools\nats-server-v2.10.0-windows-amd64
+nats-server.exe -js -p 4222 --ws --ws_port 5080 -m 8222
+pause

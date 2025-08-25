@@ -12,13 +12,23 @@ builder.Services.AddDbContext<ChatHistoryService.Data.ChatDbContext>(options =>
     options.UseSqlite(connectionString);
 });
 
+// Make NATS connection optional
 builder.Services.AddSingleton(sp =>
 {
-    var natsUrl = builder.Configuration["Nats:Url"] ?? "nats://localhost:4222";
-    var opts = new NatsOpts { Url = natsUrl };
-    return new NatsConnection(opts);
+    try
+    {
+        var natsUrl = builder.Configuration["Nats:Url"] ?? "nats://localhost:4222";
+        var opts = new NatsOpts { Url = natsUrl };
+        return new NatsConnection(opts);
+    }
+    catch
+    {
+        // Return null if NATS connection fails
+        return null;
+    }
 });
 
+// Only add NATS subscriber if connection is available
 builder.Services.AddHostedService<ChatHistoryService.Services.NatsSubscriberService>();
 
 var app = builder.Build();
@@ -55,6 +65,44 @@ app.MapGet("/history", async (string roomId, int? limit, ChatHistoryService.Data
         });
 
     return Results.Json(new { messages });
+});
+
+// Endpoint to send messages via HTTP POST
+app.MapPost("/send", async (HttpContext context, ChatHistoryService.Data.ChatDbContext db, CancellationToken ct) =>
+{
+    try
+    {
+        // Read request body manually
+        using var reader = new StreamReader(context.Request.Body);
+        var body = await reader.ReadToEndAsync(ct);
+        
+        // Parse JSON manually
+        var message = System.Text.Json.JsonSerializer.Deserialize<ChatHistoryService.Models.IncomingMessage>(body);
+        
+        if (message == null)
+        {
+            return Results.BadRequest(new { error = "Invalid message format" });
+        }
+
+        // Save to database
+        var entity = new ChatHistoryService.Models.ChatMessageEntity
+        {
+            Id = message.Id,
+            RoomId = message.RoomId,
+            User = message.User,
+            Content = message.Content,
+            Timestamp = message.Timestamp
+        };
+        
+        db.Messages.Add(entity);
+        await db.SaveChangesAsync(ct);
+
+        return Results.Ok(new { success = true, message = "Message saved successfully" });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem(ex.Message);
+    }
 });
 
 app.Run();

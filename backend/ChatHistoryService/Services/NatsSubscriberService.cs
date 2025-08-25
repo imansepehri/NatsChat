@@ -7,11 +7,11 @@ namespace ChatHistoryService.Services;
 
 public class NatsSubscriberService : BackgroundService
 {
-    private readonly NatsConnection _nats;
+    private readonly NatsConnection? _nats;
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<NatsSubscriberService> _logger;
 
-    public NatsSubscriberService(NatsConnection nats, IServiceProvider serviceProvider, ILogger<NatsSubscriberService> logger)
+    public NatsSubscriberService(NatsConnection? nats, IServiceProvider serviceProvider, ILogger<NatsSubscriberService> logger)
     {
         _nats = nats;
         _serviceProvider = serviceProvider;
@@ -20,6 +20,12 @@ public class NatsSubscriberService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        if (_nats == null)
+        {
+            _logger.LogWarning("NATS connection not available, subscriber service will not run");
+            return;
+        }
+
         await foreach (var msg in _nats.SubscribeAsync<string>("chat.room.*", cancellationToken: stoppingToken))
         {
             try
